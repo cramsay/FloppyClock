@@ -1,50 +1,41 @@
 package floppera;
 
-import gnu.io.CommPortIdentifier;
-import gnu.io.SerialPort;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Track;
 
 public class Main {
 
-	
-	String CON_PORT="/dev/rfcomm1";
-	String _midiName="mm2heat.mid";
-	String _filePath="sounds/"+_midiName;
+	String _midiName="mm2metal.mid";
+	//String _filePath="sounds/"+_midiName;
+	String _filePath="/tmp/sounds/"+_midiName;
 	int _trackOffset=-6;
-	int _pitchOffset=5;
+	int _pitchOffset=7;
 	double _tempoSkew=0.4;
 	
 	OutputStream output;
 	
 	public Main(){
-		//Get Connection with arduino
-		SerialPort port;		
-		try{
-			
-			//Setup atmel connection
-			System.setProperty("gnu.io.rxtx.SerialPorts", CON_PORT);
-			CommPortIdentifier portID = CommPortIdentifier.getPortIdentifier(CON_PORT);
-			port = (SerialPort)portID.open("Java front end", 115200);
-			output=port.getOutputStream();
-			port.setSerialPortParams(115200,  
-			SerialPort.DATABITS_8,
-			SerialPort.STOPBITS_1,
-			SerialPort.PARITY_NONE);
-			
-			Thread.sleep(2500);
-			
-			output.write(new String(_midiName).getBytes());
 			
 			//Setup for midi parse
-			Sequence midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
+			Sequence midiSe = null;
+			try {
+				//midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
+				midiSe = MidiSystem.getSequence(new File(_filePath));
+			} catch (InvalidMidiDataException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			Track tk;
 			Vector<NoteEvent> songVect = new Vector<NoteEvent>();
 			
@@ -53,7 +44,6 @@ public class Main {
 				tk = midiSe.getTracks()[track];
 				
 				for (int t=1; t<tk.size();t++){
-					System.out.println(track +": "+ tk.get(t).getMessage().getStatus());
 					
 					/*Note: keypress event is 1001nnnn where nnnn is meant to be the track number but some midi files
 					 use this rule differently (use range for wider compatibility for <=8 tracks) */
@@ -95,29 +85,24 @@ public class Main {
 				}
 			}while(swapped==true);
 			
-			//Output the events to arduino in real time
-			long startT = System.currentTimeMillis();
-			long sleepT;
-			
+			System.out.println("unsigned long song[] = {");
+			//Output the events in parsedSong
 			for (NoteEvent note: parsedSong){
-				sleepT=(long)(startT+(note.getTick()*_tempoSkew)-System.currentTimeMillis());
+				//System.out.println("Tick: " + note.getTick()*_tempoSkew);
+				//System.out.println("Track: " + note.getTrackNo());
+				//System.out.println("Period:  " + note.getPeriod());
+				//System.out.println("-");
+				long data = 0;
+				data = (byte)note.getPeriod()<<24;
+				long tick = ((long)(note.getTick()*_tempoSkew)&0x003FFFFF)<<2;
+				data |= tick;
+				data |= ((byte)note.getTrackNo()-1);
 				
-				if (sleepT>0)
-					Thread.sleep(sleepT);
-				
-				//if (note.getTrackNo()!=1)
-				printEvent((note.getTrackNo()-_trackOffset)*2, note.getPeriod());
+				System.out.println(data+",");
 			}
-			
-			output.write(new byte[]{(byte)100});
-			output.write(new byte[]{(byte)100});
-			output.write(new byte[]{(byte)100});
-			
-			Thread.sleep(1000);
-			port.close();
-			}
-		catch(Exception e){System.out.println("Uh oh...");e.printStackTrace();}
 		
+			System.out.println("};");
+			//System.out.println(parsedSong.length);
 		System.exit(0);
 	 }
 	
