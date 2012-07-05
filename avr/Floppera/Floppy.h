@@ -28,9 +28,8 @@ class Floppy {
 	public:
 		Floppy(byte motorPin, byte directionPin);
 		void incrementState();
-		void setPeriod(unsigned int period)
+		void setPeriod(unsigned int period);
 		void reset();
-		//void print();
 };
 
 #endif /* FLOPPY_H_ */

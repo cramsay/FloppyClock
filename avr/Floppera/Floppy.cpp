@@ -64,7 +64,7 @@ void Floppy::incrementState(){
 
 		//If the period has been elapsed, change state
 		//and reset tick counter
-		if (_ticks>=period){
+		if (_ticks>=_period){
 			_ticks=0;
 			changeState();		
 		}	
