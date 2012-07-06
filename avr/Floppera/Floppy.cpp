@@ -46,7 +46,7 @@ Floppy::Floppy(byte motorPin, byte directionPin){
 	_ticks = 0;
 	_position = 0;
 	_stateMotor= 0;
-	_stateDir = 0;
+	_stateDir = 1;
 
 	//Make sure the floppy starts from the start!
 	reset();
@@ -80,14 +80,14 @@ void Floppy::changeState(){
 	if (_position>=158){
 		//Set dir pin to high and set state
 		PORTD|=_bitmaskDir;
-		_stateDir=1;
+		_stateDir=0;
 	}
 	
 	//Or if at start...
 	else if (_position<=0){
 		//Set dir pin to low and set state
 		PORTD&=~_bitmaskDir;
-		_stateDir=0;
+		_stateDir=1;
 	}
 
 	//Change the position tracking variable
@@ -95,11 +95,14 @@ void Floppy::changeState(){
 	_position+=(int(_stateDir)*2)-1;
 
 	//Actually toggle stepper motor pin
-	_stateMotor=~_stateMotor;
-	if (_stateMotor)
+	if (_stateMotor){
 		PORTD|=_bitmaskMotor;
-	else
+		_stateMotor=0;	
+	}
+	else {
 		PORTD&=~_bitmaskMotor;
+		_stateMotor=1;
+	}
 }	
 
 void Floppy::setPeriod(unsigned int period){
