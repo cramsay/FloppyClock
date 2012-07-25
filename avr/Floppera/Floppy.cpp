@@ -14,22 +14,15 @@ validation on this as of yet...
 #include "Arduino.h"
 #include "Floppy.h"
 
-//Declaring class scope variables
-byte _motorPin=0;
-byte _directionPin=1;
-byte _position=0;
-byte _bitmaskMotor=0;
-byte _bitmaskDir=0;
-bool _stateMotor=0;
-bool _stateDir=0;
-unsigned int _period=0;
-unsigned int _ticks=0;
+//Defining statements for pin manipulation
+#define MOTOR_HIGH PORTD|=_bitmaskMotor
+#define MOTOR_LOW PORTD&=~_bitmaskMotor
+#define DIR_HIGH PORTD|=_bitmaskDir
+#define DIR_LOW PORTD&=~_bitmaskDir
+
+
 
 Floppy::Floppy(byte motorPin, byte directionPin){
-
-	//Set pin variables from args
-	_motorPin = motorPin;
-	_directionPin = directionPin;
 	
 	//Set up bitmask for pin control
 	//with 1 marking the pin status bit
@@ -45,11 +38,12 @@ Floppy::Floppy(byte motorPin, byte directionPin){
 	//Initialise tracking variables
 	_ticks = 0;
 	_position = 0;
+	_period = 0;
 	_stateMotor= 0;
 	_stateDir = 1;
 
 	//Make sure the floppy starts from the start!
-	reset();
+	//reset();
 }
 
 
@@ -57,7 +51,7 @@ void Floppy::incrementState(){
 
 	//Only really increment if the floppy actually
 	//making a note
-	if (_period>0){
+	if (_period!=0){
 
 		//Increment the tick count
 		_ticks++;
@@ -79,28 +73,29 @@ void Floppy::changeState(){
 	//If at end...	
 	if (_position>=158){
 		//Set dir pin to high and set state
-		PORTD|=_bitmaskDir;
+		DIR_HIGH;
 		_stateDir=0;
 	}
 	
 	//Or if at start...
+	//Note: comparator is "<=" as _position is byte and unsigned!
 	else if (_position<=0){
 		//Set dir pin to low and set state
-		PORTD&=~_bitmaskDir;
+		DIR_LOW;
 		_stateDir=1;
 	}
 
 	//Change the position tracking variable
 	//(with direction considered)
 	_position+=(int(_stateDir)*2)-1;
-
-	//Actually toggle stepper motor pin
+	
+	//Actually toggle stepper motor pin and state var
 	if (_stateMotor){
-		PORTD|=_bitmaskMotor;
+		MOTOR_HIGH;
 		_stateMotor=0;	
 	}
 	else {
-		PORTD&=~_bitmaskMotor;
+		MOTOR_LOW;
 		_stateMotor=1;
 	}
 }	
@@ -117,10 +112,9 @@ void Floppy::reset(){
 
 	//Repeatedly pulse motor control
 	for (int i=0;i<80;i++){
-		PORTD|=_bitmaskMotor;
+		MOTOR_HIGH;
 		delay(1);
-		PORTD&=~_bitmaskMotor;
-		delay(1);
+		MOTOR_LOW;
 	}
 
 	//Update motor state just in case

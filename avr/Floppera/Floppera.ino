@@ -1,14 +1,14 @@
 //Includes
 #include  <TimerOne.h>
 #include <Floppy.h>
-#include <songData.h>
+//#include <songData.h>
 
-//Constant for interval of "ticks"
-#define RESOLUTION 40 
+//Constant for interval of "ticks" from TimerOne lib
+#define RESOLUTION 40
 
 //Declare floppy array 
 Floppy drives[3]={Floppy(2,3),Floppy(4,5),Floppy(6,7)};
-Floppy test(2,3);
+
 //Set up some variables to track the next note properties
 unsigned long _startTime;
 unsigned int _noteIndex=0;
@@ -19,18 +19,22 @@ unsigned long _noteTime=0;
 //Function called upon boot
 void setup(){
 	
-  	//Setup the serial communications for debuging
+	//Only used for debugging (check for issues when disabling, another strange issue)
   	Serial.begin(9600);
   	
-  	//Set up timer library to call "updateFloppys" at a set interval
+  	//Set up TimerOne library to call "updateFloppys" at a set interval
   	Timer1.initialize(RESOLUTION); 
   	Timer1.attachInterrupt(updateFloppys);
 
-  	
   	//Set start time to now!
   	_startTime = millis();
   	//Parse the first note
-  	parseNextNoteData();
+  	//parseNextNoteData();
+
+	//DEBUGGING: set initial periods for floppys  	
+  	drives[0].setPeriod(100);
+  	drives[1].setPeriod(200);
+  	drives[2].setPeriod(400);
 }
 
 //Main loop
@@ -41,13 +45,12 @@ void loop(){
 		
 		//Serial.println("inside note loop!");
 		//Set the floppy period from the pasred data
-		test.setPeriod(80);
 	
 		//Parse the next note's data from array
 		//parseNextNoteData();
 	//}
 	
-	delay(500);
+	delay(1000);
 }
 
 
@@ -55,11 +58,16 @@ void updateFloppys() {
 	//Serial.println("updating floppys");
 	//Loop through all floppy objects in array and call the increment
 	//state function
-	//for (int i=0;i<sizeof(drives);i++){
-		test.incrementState();
-	//}
+
+	//Using for loop to generate index does strange things (NEED FIX)	
+	drives[0].incrementState();
+	drives[1].incrementState();
+	drives[2].incrementState();
+	
 }
 
+/* Commented to allow song data header to be excluded 
+    for much faster upload times while debugging
 void parseNextNoteData(){
 	
 	//Parse data from song array
@@ -70,5 +78,5 @@ void parseNextNoteData(){
 	//Increment index
 	_noteIndex++;
 }
-
+*/
 

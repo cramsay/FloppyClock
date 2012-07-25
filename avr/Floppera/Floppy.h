@@ -8,20 +8,18 @@ provide a clean looking way of pulsing
 the stepper motor from the main code
 */
 
-#ifndef FLOPPY_H_
-#define FLOPPY_H_
+#ifndef FLOPPYH
+#define FLOPPYH
 
 #include "Arduino.h"
 
 class Floppy {
 	private:
-		byte _motorPin;
-		byte _directionPin;
 		byte _position;
 		byte _bitmaskMotor;
 		byte _bitmaskDir;
-		bool stateMotor;
-		bool stateDir;
+		bool _stateMotor;
+		bool _stateDir;
 		unsigned int _period;
 		unsigned int _ticks;
 		void changeState();
@@ -32,4 +30,4 @@ class Floppy {
 		void reset();
 };
 
-#endif /* FLOPPY_H_ */
+#endif /* FLOPPYH */
