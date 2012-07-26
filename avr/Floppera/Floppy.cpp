@@ -43,11 +43,11 @@ Floppy::Floppy(byte motorPin, byte directionPin){
 	_stateDir = 1;
 
 	//Make sure the floppy starts from the start!
-	//reset();
+	reset();
 }
 
 
-void Floppy::incrementState(){
+void Floppy::incrementState() {
 
 	//Only really increment if the floppy actually
 	//making a note
@@ -66,7 +66,7 @@ void Floppy::incrementState(){
 }
 
 
-void Floppy::changeState(){
+void Floppy::changeState() {
 	
 	//Change direction of steps if needed
 	
@@ -100,7 +100,7 @@ void Floppy::changeState(){
 	}
 }	
 
-void Floppy::setPeriod(unsigned int period){
+void Floppy::setPeriod(unsigned int period) {
 	_period = period;
 }
 
@@ -113,7 +113,7 @@ void Floppy::reset(){
 	//Repeatedly pulse motor control
 	for (int i=0;i<80;i++){
 		MOTOR_HIGH;
-		delay(1);
+		//delay(1);
 		MOTOR_LOW;
 	}
 

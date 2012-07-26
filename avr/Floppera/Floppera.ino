@@ -1,82 +1,94 @@
 //Includes
-#include  <TimerOne.h>
-#include <Floppy.h>
-//#include <songData.h>
+#include  "TimerOne.h"
+#include "Floppy.h"
+#include "songData.h"
 
 //Constant for interval of "ticks" from TimerOne lib
 #define RESOLUTION 40
 
 //Declare floppy array 
-Floppy drives[3]={Floppy(2,3),Floppy(4,5),Floppy(6,7)};
+Floppy _drives[]={Floppy(2,3),Floppy(4,5),Floppy(6,7)};
 
 //Set up some variables to track the next note properties
-unsigned long _startTime;
+unsigned long _startTime=0;
 unsigned int _noteIndex=0;
-byte _noteTrack=0;
-byte _notePeriod=0;
+unsigned char _noteTrack=0;
+unsigned int _notePeriod=0;
 unsigned long _noteTime=0;
+bool _playSong=true;
 
-//Function called upon boot
+//Setup function called upon boot
 void setup(){
-	
-	//Only used for debugging (check for issues when disabling, another strange issue)
-  	Serial.begin(9600);
-  	
+
   	//Set up TimerOne library to call "updateFloppys" at a set interval
   	Timer1.initialize(RESOLUTION); 
   	Timer1.attachInterrupt(updateFloppys);
 
   	//Set start time to now!
   	_startTime = millis();
-  	//Parse the first note
-  	//parseNextNoteData();
 
-	//DEBUGGING: set initial periods for floppys  	
-  	drives[0].setPeriod(100);
-  	drives[1].setPeriod(200);
-  	drives[2].setPeriod(400);
+  	//Parse the first note
+  	parseNextNote();
+
 }
 
 //Main loop
 void loop(){
 	
-	//While notes still need to be processed...
-	//while (millis()<=_noteTime){
+	//If the song is not finished and is set to play then...
+	if ((_noteIndex<(sizeof(_songData)/sizeof(long)))&&(_playSong)){
 		
-		//Serial.println("inside note loop!");
-		//Set the floppy period from the pasred data
+		//While notes still need to be processed...
+		while (millis() >=_noteTime){	
+			//Set the floppy period from the pasred data
+			setFloppyNote(_noteTrack,_notePeriod);
+		
+			//Parse the next note's data from array
+			parseNextNote();
+		}
 	
-		//Parse the next note's data from array
-		//parseNextNoteData();
-	//}
+		//Wait until the next note is due
+		delay(_noteTime-millis());
+	}
 	
-	delay(1000);
+	//Else (the song does not need played) ...
+	else {
+	
+		//Wait longer than usual to minimize power consumption
+		delay(1000);
+		//Set the play song flag to false (may have entered the branch by exceeding 
+		//length of array)
+		_playSong=false;
+	}
+	
 }
 
 
 void updateFloppys() {
-	//Serial.println("updating floppys");
+
 	//Loop through all floppy objects in array and call the increment
 	//state function
-
-	//Using for loop to generate index does strange things (NEED FIX)	
-	drives[0].incrementState();
-	drives[1].incrementState();
-	drives[2].incrementState();
+	for (int i=0;i<(sizeof(_drives)/sizeof(Floppy));i++){
+		_drives[i].incrementState();
+	}
 	
 }
 
-/* Commented to allow song data header to be excluded 
-    for much faster upload times while debugging
-void parseNextNoteData(){
+void parseNextNote(){
 	
 	//Parse data from song array
-	_notePeriod = song[_noteIndex]>> 24;
-	_noteTime = ((song[_noteIndex]>> 2)&0x003FFFFF)+_startTime;
-	_noteTrack = song[_noteIndex]&3;
+	_noteTrack = _songData[_noteIndex]&3;
+	_notePeriod = _songData[_noteIndex]>> 24;
+	_noteTime = ((_songData[_noteIndex]>> 2)&0x003FFFFF)+_startTime;
 	
-	//Increment index
+	//Increment index for next function call
 	_noteIndex++;
 }
-*/
+
+void setFloppyNote(int index, unsigned int period){
+
+	//Call setter function for period of floppy object
+	_drives[index].setPeriod(period); 	
+}
+
 

@@ -20,7 +20,7 @@ class Floppy {
 		byte _bitmaskDir;
 		bool _stateMotor;
 		bool _stateDir;
-		unsigned int _period;
+		volatile unsigned int _period;
 		unsigned int _ticks;
 		void changeState();
 	public:
