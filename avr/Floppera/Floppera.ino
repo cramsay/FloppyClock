@@ -1,5 +1,6 @@
 //Includes
-#include  "TimerOne.h"
+#include "TimerOne.h"
+#include "pgmspace.h"
 #include "Floppy.h"
 #include "songData.h"
 
@@ -7,7 +8,7 @@
 #define RESOLUTION 40
 
 //Declare floppy array 
-Floppy _drives[]={Floppy(2,3),Floppy(4,5),Floppy(6,7)};
+Floppy _drives[]={Floppy(0,1),Floppy(2,3),Floppy(4,5),Floppy(6,7)};
 
 //Set up some variables to track the next note properties
 unsigned long _startTime=0;
@@ -36,7 +37,7 @@ void setup(){
 void loop(){
 	
 	//If the song is not finished and is set to play then...
-	if ((_noteIndex<(sizeof(_songData)/sizeof(long)))&&(_playSong)){
+	if ((_noteIndex<_songDataLength)&&(_playSong)){
 		
 		//While notes still need to be processed...
 		while (millis() >=_noteTime){	
@@ -77,9 +78,9 @@ void updateFloppys() {
 void parseNextNote(){
 	
 	//Parse data from song array
-	_noteTrack = _songData[_noteIndex]&3;
-	_notePeriod = _songData[_noteIndex]>> 24;
-	_noteTime = ((_songData[_noteIndex]>> 2)&0x003FFFFF)+_startTime;
+	_noteTrack = pgm_read_dword_near(&_songData[_noteIndex])&3;
+	_notePeriod = pgm_read_dword_near(&_songData[_noteIndex])>> 24;
+	_noteTime = ((pgm_read_dword_near(&_songData[_noteIndex])>> 2)&0x003FFFFF)+_startTime;
 	
 	//Increment index for next function call
 	_noteIndex++;

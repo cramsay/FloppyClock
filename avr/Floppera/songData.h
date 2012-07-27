@@ -1,4 +1,9 @@
-unsigned long _songData[] = {
+#include "pgmspace.h"
+
+#define _songDataLength 1397
+
+/*PROGMEM modifier and special "unsigned long" data type for storage in flash memory on avr chip */
+prog_uint32_t _songData[] PROGMEM= {
 1509949440,
 754974721,
 1509949442,
@@ -484,7 +489,7 @@ unsigned long _songData[] = {
 620827265,
 1510019714,
 70561,
-70562/*,
+70562,
 620828033,
 1510020482,
 71329,
@@ -1395,6 +1400,6 @@ unsigned long _songData[] = {
 196896,
 196897,
 755171712,
-755171713*/
+755171713
 };
 
