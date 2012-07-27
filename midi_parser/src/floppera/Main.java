@@ -14,8 +14,7 @@ public class Main {
 
 	String _midiName="mm2metal.mid";
 	//String _filePath="sounds/"+_midiName;
-	String _filePath="/tmp/sounds/"+_midiName;
-	int _trackOffset=-6;
+	String _filePath="sounds/"+_midiName;
 	int _pitchOffset=7;
 	double _tempoSkew=0.4;
 	
@@ -26,8 +25,8 @@ public class Main {
 			//Setup for midi parse
 			Sequence midiSe = null;
 			try {
-				//midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
-				midiSe = MidiSystem.getSequence(new File(_filePath));
+				midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
+				//midiSe = MidiSystem.getSequence(new File(_filePath));
 			} catch (InvalidMidiDataException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -39,8 +38,12 @@ public class Main {
 			Track tk;
 			Vector<NoteEvent> songVect = new Vector<NoteEvent>();
 			
+			int noTracks = midiSe.getTracks().length;
+			if (noTracks>4)
+				noTracks=4;
+			
 			//Parse all note change events on all midi tracks
-			for (int track=0; track<midiSe.getTracks().length;track++){
+			for (int track=0; track<noTracks;track++){
 				tk = midiSe.getTracks()[track];
 				
 				for (int t=1; t<tk.size();t++){
@@ -85,7 +88,19 @@ public class Main {
 				}
 			}while(swapped==true);
 			
-			System.out.println("unsigned long song[] = {");
+			
+			/*Print out a heade structure similar to : 
+			 
+			  #include "pgmspace.h"
+			  #define _songDataLength 1397
+              //PROGMEM modifier and special "unsigned long" data type for storage in flash memory on avr chip
+              prog_uint32_t _songData[] PROGMEM= {....*/
+			  
+			System.out.println("#include \"pgmspace.h\"");
+			System.out.print("#define _songDataLength ");
+			System.out.println(parsedSong.length);
+			System.out.println("\n//PROGMEM modifier and special \"unsigned long\" data type for storage in flash memory on avr chip");
+			System.out.println("prog_uint32_t _songData[] PROGMEM = {");
 			//Output the events in parsedSong
 			for (NoteEvent note: parsedSong){
 				//System.out.println("Tick: " + note.getTick()*_tempoSkew);
@@ -111,18 +126,6 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		new Main();
-	}
-	
-	private void printEvent(int floppy, int period) throws IOException{
-		output.write(new byte[]{(byte)floppy});
-		output.write(getFreqBytes(period));
-	}
-	
-	private byte[] getFreqBytes(int freq){
-		int fb = freq/256;
-		int sb = freq%256;
-		byte[] f = {(byte) (fb&0xff),(byte) (sb&0xff)};
-		return f;
 	}
 
 	private int getTfromMidiNo(int midiNo){

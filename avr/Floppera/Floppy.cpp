@@ -15,10 +15,10 @@ validation on this as of yet...
 #include "Floppy.h"
 
 //Defining statements for pin manipulation
-#define MOTOR_HIGH PORTD|=_bitmaskMotor
-#define MOTOR_LOW PORTD&=~_bitmaskMotor
-#define DIR_HIGH PORTD|=_bitmaskDir
-#define DIR_LOW PORTD&=~_bitmaskDir
+#define MOTOR_HIGH PORTB|=_bitmaskMotor
+#define MOTOR_LOW PORTB&=~_bitmaskMotor
+#define DIR_HIGH PORTB|=_bitmaskDir
+#define DIR_LOW PORTB&=~_bitmaskDir
 
 
 
@@ -30,10 +30,10 @@ Floppy::Floppy(byte motorPin, byte directionPin){
 	_bitmaskDir = 1<<directionPin;
 
 	//Set direction and motor pins to ouputs
-	DDRD|=(_bitmaskDir|_bitmaskMotor);
+	DDRB|=(_bitmaskDir|_bitmaskMotor);
 
 	//Set both pins to low
-	PORTD&=~(_bitmaskDir|_bitmaskMotor);
+	PORTB&=~(_bitmaskDir|_bitmaskMotor);
 
 	//Initialise tracking variables
 	_ticks = 0;
