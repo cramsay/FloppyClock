@@ -14,8 +14,8 @@ public class Main {
 
 	String _midiName="mm2metal.mid";
 	//String _filePath="sounds/"+_midiName;
-	String _filePath="sounds/"+_midiName;
-	int _pitchOffset=7;
+	String _filePath="/tmp/sounds/"+_midiName;
+	int _pitchOffset=-6;
 	double _tempoSkew=0.4;
 	
 	OutputStream output;
@@ -25,8 +25,8 @@ public class Main {
 			//Setup for midi parse
 			Sequence midiSe = null;
 			try {
-				midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
-				//midiSe = MidiSystem.getSequence(new File(_filePath));
+				//midiSe = MidiSystem.getSequence(new File(this.getClass().getResource(_filePath).getFile()));
+				midiSe = MidiSystem.getSequence(new File(_filePath));
 			} catch (InvalidMidiDataException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

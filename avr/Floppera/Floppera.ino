@@ -1,117 +1,116 @@
-//Includes
-#include "TimerOne.h"
-#include "pgmspace.h"
-#include "Floppy.h"
-#include "songData.h"
+#include "SongPlayer.h"
+#include "UI.h"
+#include "TimeStruct.h"
+#include <LiquidCrystal.h>
 
-//Constant for interval of "ticks" from TimerOne lib
-#define RESOLUTION 40
-
-//Declare floppy array 
-//NOTE: These pin numbers are relative to the "B" port registers
-//so 0->5 maps to pins 8->13 as marked on the arduino board
-Floppy _drives[]={Floppy(0,1),Floppy(2,3),Floppy(4,5)};
-
-//Set up some variables to track the next note properties
-unsigned long _startTime=0;
-bool _playSong=true;
+//Declare globals
+SongPlayer _songPlayer;
+struct TimeStruct timeMain;
+struct TimeStruct timeAlarm;
 
 //Setup function called upon boot
 void setup(){
-
+	//Begin the serial connection for debugging
 	Serial.begin(9600);
 
-  	//Set up TimerOne library to call "updateFloppys" at a set interval
-  	Timer1.initialize(RESOLUTION); 
-  	Timer1.attachInterrupt(updateFloppys);
+	//Initialise time structs
+	timeMain.lastMinute=millis();
+	timeAlarm.hour=7;
+	timeAlarm.minute=30;
+	
+	//Initialise the LCD screen
+	initialiseLCD();
+	updateStatusLCD(&timeMain);
 
-  	//Set start time to now!
-  	_startTime = millis();
-
+	//Set control pins to inputs
+	pinMode(A0,INPUT);
+	pinMode(A1,INPUT);
+	pinMode(A2,INPUT);
 }
 
 //Main loop
 void loop(){
+
+	//Update the floppy drives and song data
+	_songPlayer.updateSong();
 	
-	static unsigned int noteIndex=0;
-	static unsigned char noteTrack=0;
-	static unsigned int notePeriod=0;
-	static unsigned long noteTime=0;
+	//Update the time structure
+	updateTime(&timeMain, &timeAlarm);
 	
-	//If the song is not finished and is set to play then...
-	if ((noteIndex<_songDataLength)&&(_playSong)){
-		
-		//While notes still need to be processed...
-		while (millis() >=noteTime){	
-			//Set the floppy period from the pasred data
-			setFloppyNote(noteTrack,notePeriod);
-		
-			//Parse the next note's data from array
-			parseNextNote(noteTrack,notePeriod,noteTime,noteIndex);
-		}
+	//Get user input and perform corresponding functions
+	int control = getUserInput();
 	
-		//Wait until the next note is due
-		delay(noteTime-millis());
+	switch (control){
+		case 0:
+			getNewTime(0,&timeAlarm);
+			updateStatusLCD(&timeMain);
+			break;
+		case 1: 
+			getNewTime(1,&timeMain);
+			updateStatusLCD(&timeMain);
+			break;
+		case 2:
+			_songPlayer.songStart();
+			break;
+		case 3:
+			_songPlayer.songStop();
+			break;
+		default:
+			break; 
 	}
-	
-	//If this the song has just ended (playSong is still true)
-	else if ((noteIndex>=_songDataLength)&&(_playSong)){
-		Serial.print("ending branch");		
 
-		//Set playSong to false and reset the noteIndex to 0
-		_playSong=false;
-		noteIndex=0;
+	//Small delay
+	delay(1);
+}
+
+void updateTime(struct TimeStruct *timeMain, struct TimeStruct *timeAlarm){
+
+	//If 60 seconds have passed since last update then
+	if (millis()>=(timeMain->lastMinute+60000)){
+		//Increment the lastMinute var
+		timeMain->lastMinute+=60000; //NOTE: not millis()+60000 to avoid compound errors accumulating
+		//Increment the minute var
+		timeMain->minute++;
 		
-		//Set all drives to a period of zero
-		for (int i=0;i<(sizeof(_drives)/sizeof(Floppy));i++){
-			_drives[i].setPeriod(0);
+		//Roll over hour if required
+		if (timeMain->minute>=60){
+			//Reset minuteCounter
+			timeMain->minute=0;
+			//Increment hour
+			timeMain->hour++;
+
+			//Roll over day if required
+			if (timeMain->hour>=24){
+				//Reset hour to 0
+				timeMain->hour=0;
+			}
 		}
-			
-		updateFloppys();
-			
-		//Also, detach the timerOne lib from the update floppy 
-		//function to save power
-		Timer1.detachInterrupt();
+		
+		//Update the time on the screen
+		updateStatusLCD(timeMain);
+
+		//Check if it is time for the alarm
+		if (timeMain->minute==timeAlarm->minute&&timeMain->hour==timeAlarm->hour){
+			//Play the song
+			_songPlayer.songStart();	
 		}
 
-	//Else (the song does not need played) ...
-	else {
-	
-		//Wait longer than usual to minimize power consumption
-		delay(2000);
 	}
-	
-}
 
-
-void updateFloppys() {
-
-	//Loop through all floppy objects in array and call the increment
-	//state function
-	for (int i=0;i<(sizeof(_drives)/sizeof(Floppy));i++){
-		_drives[i].incrementState();
+	//Check for millis() rollover
+	if (timeMain->lastMinute>millis()){
+		//Set lastminute to current time - 1 minute
+		timeMain->lastMinute=millis()-60000;
+		
+		//If that has kept lastMinute to before rollover just set it to 0
+		if (timeMain->lastMinute>millis()){
+			//(slight loss in time accuracy here)
+			timeMain-> lastMinute=0;	
+		}
 	}
-	
 }
 
-void parseNextNote(unsigned char &noteTrack, unsigned int &notePeriod, unsigned long &noteTime, unsigned int &noteIndex){
-	
-	//Parse data from song array
-	//NOTE: pgm_read_dword is a function from pgmspace.h as _songData
-	//currently resides in the program space in flash memory. The address
-	//of each element is then passed, hence the "&"
-	noteTrack = pgm_read_dword_near(&_songData[noteIndex])&3;
-	notePeriod = pgm_read_dword_near(&_songData[noteIndex])>> 24;
-	noteTime = ((pgm_read_dword_near(&_songData[noteIndex])>> 2)&0x003FFFFF)+_startTime;
-	
-	//Increment index for next function call
-	noteIndex++;
+void toggleSong(){
+	_songPlayer.toggleSongState();
 }
-
-void setFloppyNote(int index, unsigned int period){
-
-	//Call setter function for period of floppy object
-	_drives[index].setPeriod(period); 	
-}
-
 
