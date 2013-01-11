@@ -8,8 +8,8 @@ Class for controlling the playing of the song (used with Floppy.h)
 #include "Arduino.h"
 #include "SongPlayer.h"
 #include "Floppy.h"
-#include "TimerOne.h"
-#include "pgmspace.h"
+#include "lib/TimerOne.h"
+#include "lib/pgmspace.h"
 #include "songData.h"
 
 //Constant for interval of "ticks" from TimerOne lib
