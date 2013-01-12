@@ -1,6 +1,8 @@
 #include "SongPlayer.h"
 #include "UI.h"
 #include "TimeStruct.h"
+#include <TimerOne.h> //These 2 includes are not needed in this file - BUT the arduino ide wont compile 
+#include <pgmspace.h> //if they are only included in a .cpp file so they are in the here as a workaround.
 #include <LiquidCrystal.h>
 
 //Declare globals
