@@ -1,3 +1,4 @@
+
 /*
 songData.cpp
 Craig Ramsay
@@ -8,15 +9,16 @@ Class for controlling the playing of the song (used with Floppy.h)
 #include "Arduino.h"
 #include "SongPlayer.h"
 #include "Floppy.h"
-#include "lib/TimerOne.h"
-#include "lib/pgmspace.h"
 #include "songData.h"
+#include <TimerOne.h>
+#include <pgmspace.h>
 
 //Constant for interval of "ticks" from TimerOne lib
 #define RESOLUTION 40
 
 //This will break when there is more than one instance (class level the noo)
 Floppy _drives[]={Floppy(0,1),Floppy(2,3),Floppy(4,5)};
+
 
 SongPlayer::SongPlayer(){
 	
